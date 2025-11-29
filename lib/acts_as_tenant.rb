@@ -22,6 +22,14 @@ module ActsAsTenant
     def current_tenant=(tenant)
       super.tap { ActsAsTenant.configuration.tenant_change_hook&.call(tenant) }
     end
+
+    def current_attributes
+      storage[name] ||= {}
+    end
+
+    def storage
+      ActiveSupport::IsolatedExecutionState[:current_attributes] ||= {}
+    end
   end
 
   class << self
