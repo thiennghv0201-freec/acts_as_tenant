@@ -93,61 +93,61 @@ module ActsAsTenant
         end
 
         # Records must belong to the current tenant, matching what the default scope would find
-        validate do |record|
-          current_tenant = ActsAsTenant.current_tenant
-          next unless current_tenant
+        # validate do |record|
+          # current_tenant = ActsAsTenant.current_tenant
+          # next unless current_tenant
 
-          tenant_attributes = [fkey, polymorphic_type].compact
-          next unless record.new_record? || tenant_attributes.any? { |attr| record.will_save_change_to_attribute?(attr) }
+          # tenant_attributes = [fkey, polymorphic_type].compact
+          # next unless record.new_record? || tenant_attributes.any? { |attr| record.will_save_change_to_attribute?(attr) }
 
-          record_tenant = tenant_identity.call(record)
-          next if record_tenant.nil?
+          # record_tenant = tenant_identity.call(record)
+          # next if record_tenant.nil?
 
-          record_id, record_type = record_tenant
-          matches = record_id.to_s == current_tenant.public_send(pkey).to_s
-          matches &&= record_type == current_tenant.class.polymorphic_name if options[:polymorphic]
+          # record_id, record_type = record_tenant
+          # matches = record_id.to_s == current_tenant.public_send(pkey).to_s
+          # matches &&= record_type == current_tenant.class.polymorphic_name if options[:polymorphic]
 
-          record.errors.add(fkey, "must be the current tenant [ActsAsTenant]") unless matches
-        end
+          # record.errors.add(fkey, "must be the current laksjdlkajsljd [ActsAsTenant]") unless matches
+        # end
 
         # Associations are looked up at validation time so belongs_to associations
         # declared after acts_as_tenant are validated too
-        validate do |record|
-          associations = record.class.reflect_on_all_associations(:belongs_to)
-          polymorphic_foreign_keys = associations.select(&:polymorphic?).map(&:foreign_key)
+        # validate do |record|
+        #   associations = record.class.reflect_on_all_associations(:belongs_to)
+        #   polymorphic_foreign_keys = associations.select(&:polymorphic?).map(&:foreign_key)
 
-          associations.each do |a|
-            attr = a.foreign_key.to_sym
-            next if a.name == tenant.to_sym
+        #   associations.each do |a|
+        #     attr = a.foreign_key.to_sym
+        #     next if a.name == tenant.to_sym
 
-            if a.polymorphic?
-              next unless record.will_save_change_to_attribute?(attr) || record.will_save_change_to_attribute?(a.foreign_type)
-            else
-              # Associations sharing a polymorphic foreign key are checked through the polymorphic association
-              next if polymorphic_foreign_keys.include?(a.foreign_key)
-              next unless record.will_save_change_to_attribute?(attr)
-            end
+        #     if a.polymorphic?
+        #       next unless record.will_save_change_to_attribute?(attr) || record.will_save_change_to_attribute?(a.foreign_type)
+        #     else
+        #       # Associations sharing a polymorphic foreign key are checked through the polymorphic association
+        #       next if polymorphic_foreign_keys.include?(a.foreign_key)
+        #       next unless record.will_save_change_to_attribute?(attr)
+        #     end
 
-            value = record.read_attribute_for_validation(attr)
-            next if value.nil?
+        #     value = record.read_attribute_for_validation(attr)
+        #     next if value.nil?
 
-            klass = if a.polymorphic?
-              type = record.read_attribute(a.foreign_type)&.safe_constantize
-              type if type.is_a?(Class) && type < ActiveRecord::Base
-            else
-              a.klass
-            end
+        #     klass = if a.polymorphic?
+        #       type = record.read_attribute(a.foreign_type)&.safe_constantize
+        #       type if type.is_a?(Class) && type < ActiveRecord::Base
+        #     else
+        #       a.klass
+        #     end
 
-            associated = if klass
-              relation = a.scope ? a.scope_for(klass.all, record) : klass
-              relation.find_by(a.association_primary_key(klass) => value)
-            end
+        #     associated = if klass
+        #       relation = a.scope ? a.scope_for(klass.all, record) : klass
+        #       relation.find_by(a.association_primary_key(klass) => value)
+        #     end
 
-            if associated.nil? || tenant_mismatch.call(record, associated)
-              record.errors.add attr, "association is invalid [ActsAsTenant]"
-            end
-          end
-        end
+        #     if associated.nil? || tenant_mismatch.call(record, associated)
+        #       record.errors.add attr, "association is invalid [ActsAsTenant]"
+        #     end
+        #   end
+        # end
 
         # Tenant writers raise if the tenant changes on a persisted record
         to_include = Module.new {
